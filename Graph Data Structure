@@ -1,0 +1,465 @@
+/*
+Q.1
+Implement the functions to generate the adjacency matrix and adjacency list that represent a graph data structure. Also,
+implement the insert and delete function that adds and deletes the node in the graph in each of the cases
+
+Name: Kashyap Halavadia
+ID: 202003040
+
+*/
+#include <iostream>
+#include<queue>
+
+using namespace std;
+
+struct Node_of_main_list;//just given a prototype that a struct of this name is there, definition of this struct will be given afterwards
+
+
+struct Node_of_adj_list{//Node 1 is the pointer of the adjacency list of each node
+
+    string label;
+    Node_of_main_list* point_to_mainList_Node;
+    Node_of_adj_list* next;//pointing to the next adjacent node of a given node
+    Node_of_adj_list(string Label,Node_of_main_list* current):label(Label),point_to_mainList_Node(current),next(nullptr){}
+    //as the node which is added as the neighbour of some vertex in the adj_list should also have link to the original node
+};
+
+struct Node_of_main_list{//Node 2 is the  the node of the main list
+
+    string label;
+    Node_of_main_list* next;
+    Node_of_adj_list* pointToAdjNodeList;
+    bool visited;//it will help while traversing to keep track of the nodes which are already processed
+    int node_index;
+    Node_of_main_list(string Label,int num):label(Label),next(nullptr),pointToAdjNodeList(nullptr),visited(0),node_index(num){}//constructor
+
+};
+
+
+ struct List{//adjacency list representation of a graph
+
+    Node_of_main_list* head;
+    Node_of_main_list* tail;
+    int no_of_nodes;
+
+    List():head(nullptr),tail(nullptr),no_of_nodes(0){}//same name as that of class
+
+    Node_of_main_list* appendNode_in_mainList(string Label){//string label will be passed as parameter
+
+        if(head==nullptr){//to create first node of the graph
+            head=new Node_of_main_list(Label,no_of_nodes);//Node of main list
+            tail=head;
+        }
+        else{//to create a isolated node in the graph
+            tail->next=new Node_of_main_list(Label,no_of_nodes);//superclass pointer pointing to an object of subclass
+            tail=tail->next;
+        }
+
+        no_of_nodes++;
+        return tail;
+
+
+    }
+//newLabel will be added as neighbour of NeighbourVertex
+    void insert_Node(string NeighbourVertex,string newLabel){//new node with newLabel, will be inserted as neighbour of the vertex given in Neighbour Vertex i.e. there will be an edge from NeighbourVertex to the newly created node
+
+        Node_of_main_list* currentNode=head;
+        Node_of_main_list* loc=nullptr;
+        int present=0;
+        while(currentNode!=nullptr){
+            if(currentNode->label==newLabel){//if the node which is to be inserted is already present in the list then return
+                loc=currentNode;
+                present=1;
+                break;
+            }
+            currentNode=currentNode->next;
+        }
+
+        if(present==0)
+            loc=appendNode_in_mainList(newLabel);
+        Node_of_main_list* current=head;
+
+        while(current!=nullptr){
+
+            if(current->label==NeighbourVertex){
+                if(current->pointToAdjNodeList==nullptr)
+                    current->pointToAdjNodeList=new Node_of_adj_list(newLabel,loc);
+                else{
+                    Node_of_adj_list* current2=current->pointToAdjNodeList;
+                    while(current2->next!=nullptr)
+                        current2=current2->next;
+                    current2->next=new Node_of_adj_list(newLabel,loc);//newly created node is added as Neighbour Vertex's adjacent node
+                }
+                break;
+            }
+
+            current=current->next;
+
+        }
+
+    }
+
+    void Insertion(string* neighbour_Vertices,int sizeOfArray,string newVertexLabel){//new node with newVertexLabel will be created and it will be added as a neighbour of all the vertices present in newVertexLabel
+
+        for(int i=0;i<sizeOfArray;i++){
+            insert_Node(neighbour_Vertices[i],newVertexLabel);
+
+            }
+
+    }
+
+     void print_adj_nodes(Node_of_main_list* ptr){
+        Node_of_adj_list* current=ptr->pointToAdjNodeList;
+        cout<<"\nAdjacent nodes of "<<ptr->label<<" are: ";
+        while(current!=nullptr){
+            cout<<current->label<<"  ";
+            current=current->next;
+        }
+
+    //cout<<"\n";
+
+    }
+
+    void delete_adj_linked_list(Node_of_adj_list* &head){
+        //cout<<"Head value is: "<<head->label<<endl;
+        if(head->next->next!=nullptr)
+            delete_adj_linked_list(head->next);
+
+        if(head->next==nullptr){
+            delete head;
+            head=nullptr;
+            //cout<<"\nreached here!";
+        }
+
+          if(head->next->next==nullptr){
+            delete head->next;
+            head->next=nullptr;
+           // cout<<"\n\nValue of head is: "<<head->label<<endl;
+        }
+
+
+
+    }
+
+
+
+    void delete_all_adj_edges(Node_of_main_list* & head){//function for deleting all edges starting from root node
+        if(head->pointToAdjNodeList==nullptr)//if head==nullptr then return
+            return;
+        if(head->pointToAdjNodeList->next==nullptr){
+            delete head->pointToAdjNodeList;
+            head->pointToAdjNodeList=nullptr;
+        }
+        else{
+            delete_adj_linked_list(head->pointToAdjNodeList);//recursive call to delete the nodes of the linked list
+            head->pointToAdjNodeList=nullptr;
+        }
+    }
+
+
+
+    void delete_Edge_btw_two_given_nodes(Node_of_main_list* leftNode,string Label){//deleting an edge
+        Node_of_adj_list* A =leftNode->pointToAdjNodeList;
+
+        if(A==nullptr)
+            return;
+
+        if(A->label==Label){//similar to deleting a head in linked list
+            leftNode->pointToAdjNodeList=A->next;
+            delete A;
+        }
+        else{
+
+            while(A->next!=nullptr){//if you want to delete the nth node then you need to be at (n-1)th node
+                if(A->next->label==Label){
+                    Node_of_adj_list* ptr=A->next;
+                    A->next=A->next->next;
+                    delete ptr;
+                    break;
+                }
+                A=A->next;
+
+            }
+        }
+
+    }
+
+
+    void delete_Node(string Label){
+
+        Node_of_main_list* currentNode=head;
+        Node_of_main_list* point_to_Prev_node=nullptr;
+        int present=0;
+
+        if(currentNode->label==Label){//if the head needs to be deleted
+            point_to_Prev_node=nullptr;
+            cout<<"\nHead node needs to be deleted:  "<<endl;
+            present=1;
+        }
+
+        else{
+            while(currentNode->next!=nullptr){
+                if(currentNode->next->label==Label){//if the node which is to be inserted is already present in the list then return
+                    point_to_Prev_node=currentNode;
+                    cout<<"Previous node of the node to be deleted is:  "<<point_to_Prev_node->label<<endl;
+                    present=1;
+                    break;
+                }
+                currentNode=currentNode->next;
+            }
+
+        }
+
+        if(present==0)
+            return;
+       // if(point_to_Prev_node->next==nullptr)//if the node to be delete is not present then return
+           // return;
+        //first delete all nodes ending at node whose label= Label, label is string
+            Node_of_main_list* current=head;//current pointer pointing to head node of linked list
+
+            while(current!=nullptr){
+                if(current->label!=Label)
+                    delete_Edge_btw_two_given_nodes(current,Label);//deleting all the edges ending at node to be deleted
+                //this->print_adj_nodes(current);
+                current=current->next;
+
+            }
+
+        Node_of_main_list* pivot;
+
+        if(point_to_Prev_node!=nullptr){
+            delete_all_adj_edges(point_to_Prev_node->next);//deleting all edges starting from the node to be deleted
+            Node_of_main_list* ptr= point_to_Prev_node->next;//if you want to delete the nth node then you need to be (n-1)th node
+            point_to_Prev_node->next=point_to_Prev_node->next->next;
+            pivot=point_to_Prev_node->next;
+            delete ptr;
+
+        }
+
+        else{
+             delete_all_adj_edges(head);//deleting all edges starting from the node to be deleted
+            Node_of_main_list* ptr= head;//if you want to delete the nth node then you need to be (n-1)th node
+            head=head->next;
+            pivot=head;
+            delete ptr;
+
+
+        }
+
+        while(pivot!=nullptr){
+            pivot->node_index-=1;//as if we delete 2nd node that
+            pivot=pivot->next;
+
+        }
+
+        no_of_nodes--;
+
+    }
+
+    void print_nodes(){
+        Node_of_main_list* current=head;
+        cout<<"\nNodes present in graph are: ";
+        while(current!=nullptr){
+            cout<<current->label<<"  ";
+            current=current->next;
+        }
+
+    cout<<"\n\n";
+
+    }
+
+    void get_Adjacency_matrix(){//reference to a pointer value
+
+        int** arr;
+        int n=this->no_of_nodes;
+        cout<<"No of nodes is: "<<no_of_nodes<<endl;
+        arr=new int*[n];
+
+        for(int i=0;i<n;i++)
+            arr[i]=new int[n];
+        for(int i=0;i<n;i++)
+            for(int j=0;j<n;j++)
+                arr[i][j]=0;
+
+        Node_of_main_list* current1=head;
+
+        while(current1!=nullptr){
+                //cout<<"Value of current1: "<<current1->label<<"    ";
+            Node_of_adj_list* current2=current1->pointToAdjNodeList;
+            while(current2!=nullptr){
+               // cout<<"Value of current2: "<<current2->label<<"  ";
+                arr[current1->node_index][current2->point_to_mainList_Node->node_index]++;
+                current2=current2->next;
+                //if(current2!=nullptr)
+                    //cout<<"  current2 next index : "<<current2->point_to_mainList_Node->node_index<<" ";
+            }
+       // cout<<"\n";
+
+            current1=current1->next;
+            }
+
+        cout<<"\n\nAdjacency matrix of the given graph is: \n";
+        for(int i=0;i<no_of_nodes;i++){
+            for(int x=0;x<no_of_nodes;x++){
+                cout<<arr[i][x]<<" ";
+            }
+            cout<<"\n";
+
+        }
+
+    }
+
+
+    void get_Adjacency_list(){
+        Node_of_main_list* cur=head;
+        while(cur!=nullptr){
+            print_adj_nodes(cur);
+            cur=cur->next;
+        }
+
+
+    }
+
+
+
+};
+
+void depth_first_search(Node_of_main_list* ptr){//depth_first_search using recursion
+    if(ptr==nullptr)
+        return;
+    if(ptr->visited==false){//we have to only process the nodes which are not processed as eah node needs to be processed only once
+        cout<<ptr->label<<" ";
+        ptr->visited=1;
+    }
+    else{//because if the node is already visited then we should return because if not then we will fall into infinite recursion
+        return;
+    }
+
+    Node_of_adj_list* current=ptr->pointToAdjNodeList;
+    while(current!=nullptr){
+        depth_first_search(current->point_to_mainList_Node);//recursive call to breadth first search passing argument as neighbour node of the ptr
+        current=current->next;
+    }
+
+}
+
+
+void DFS(List& graph){//DFS traversal of the tree
+
+    cout<<"\nDepth First Search of the given graph is: ";
+    depth_first_search(graph.head);
+    Node_of_main_list* current=graph.head;
+    while(current!=nullptr){
+        current->visited=0;//reseting all the visited values of all the nodes to "false" so that it can be used the next time we call the function
+        current=current->next;
+    }
+    cout<<endl;
+
+}
+
+void BFS(List& graph){//Breadth first search
+
+    if(graph.head==nullptr)
+        return;
+    queue<Node_of_main_list*> neighbours_nodes;//pointer to the node of mainList
+    neighbours_nodes.push(graph.head);
+    graph.head->visited=1;
+    cout<<"\nBreadth First Search of the given graph is:  ";
+
+    while(neighbours_nodes.empty()==false){
+
+        Node_of_main_list* current=neighbours_nodes.front();//getting the front element of the queue
+        neighbours_nodes.pop();//removing an element from the queue
+        cout<<current->label<<" ";
+        Node_of_adj_list* current2=current->pointToAdjNodeList;
+
+        while(current2!=nullptr){
+
+            if(current2->point_to_mainList_Node->visited==0){//pushing the unvisited neighbours of the current node into the queue, only those neighbours which are unvisited will be pushed into the queue
+                neighbours_nodes.push(current2->point_to_mainList_Node);//pushing the unvisited neighbour nodes into queue
+                current2->point_to_mainList_Node->visited=1;//as they are now pushed into the queue so they are marked as visited
+            }
+            current2=current2->next;
+
+        }
+
+
+    }
+    cout<<endl;
+
+    Node_of_main_list* cur=graph.head;
+    while(cur!=nullptr){
+        cur->visited=0;//resetting all the visited fields of all the nodes to "false" so that it can be used the next time we call the function
+        cur=cur->next;
+    }
+
+
+}
+
+
+
+int main()
+{
+
+    List graph1;//graph1 is an object of this class
+    graph1.appendNode_in_mainList("A");
+   /* graph1.insert_Node("A","B");
+    graph1.insert_Node("A","D");//edge will be from A to D
+    graph1.insert_Node("D","E");
+    graph1.insert_Node("B","C");
+    graph1.insert_Node("A","C");//edge will be from A to D
+    graph1.insert_Node("D","C");
+    graph1.insert_Node("E","C");*/
+
+    graph1.insert_Node("A","F");
+    //graph1.print_nodes();
+    graph1.insert_Node("A","C");//edge will be from A to D
+    //graph1.print_nodes();
+    graph1.insert_Node("A","B");//edge will be from A to D
+    graph1.insert_Node("B","G");
+    graph1.insert_Node("B","C");
+    graph1.insert_Node("C","F");//3
+    graph1.insert_Node("F","D");//4
+   // graph1.print_nodes();
+    graph1.insert_Node("D","C");//5
+    graph1.insert_Node("G","C");//6
+    //graph1.print_nodes();
+    graph1.insert_Node("G","E");
+    graph1.insert_Node("E","D");
+    graph1.insert_Node("E","C");
+    //graph1.print_nodes();
+    graph1.insert_Node("E","J");
+    //graph1.print_nodes();
+    graph1.insert_Node("J","D");
+    //graph1.print_nodes();
+    graph1.insert_Node("J","K");
+   // graph1.print_nodes();
+    graph1.insert_Node("K","E");
+    graph1.insert_Node("K","G");
+    graph1.print_nodes();
+
+    graph1.get_Adjacency_matrix();
+    cout<<"\nAdjacency list representation of the given graph is:\n ";
+    graph1.get_Adjacency_list();
+
+   // cout<<graph1.head->label<<endl;//printing
+   // DFS(graph1);
+    //BFS(graph1);
+
+
+    string node_to_be_deleted;
+    cout<<"\n\nEnter label of the node to be deleted: ";
+    cin>>node_to_be_deleted;
+
+    graph1.delete_Node(node_to_be_deleted);
+
+    cout<<"\n\nAfter deletion of "<<node_to_be_deleted<<" the adjacency matrix is: \n";
+    graph1.get_Adjacency_matrix();
+
+    cout<<"\nAdjacency list representation of the updated graph is:\n ";
+    graph1.get_Adjacency_list();
+
+
+
+    return 0;
+}
